@@ -3,6 +3,13 @@ import cv2
 
 
 class ImageVisualizer(object):
+    """ Class for visualizing image
+
+    Attributes:
+        idx_to_name: list to convert integer to string label
+        class_colors: colors for drawing boxes and labels
+        save_dir: directory to store images
+    """
     def __init__(self, idx_to_name, class_colors=None, save_dir=None):
         self.idx_to_name = idx_to_name
         if class_colors is None or len(class_colors) != len(self.idx_to_name):
@@ -16,6 +23,15 @@ class ImageVisualizer(object):
             self.save_dir = save_dir
 
     def save_image(self, img, boxes, labels, name):
+        """ Method to draw boxes and labels
+            then save to dir
+
+        Args:
+            img: numpy array (3, width, height)
+            boxes: numpy array (num_boxes, 4)
+            labels: numpy array (num_boxes)
+            name: name of image to be saved
+        """
         save_path = os.path.join(self.save_dir, name)
         if len(boxes) == 0:
             cv2.imwrite(save_path, img)

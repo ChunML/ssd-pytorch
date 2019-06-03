@@ -29,6 +29,22 @@ NUM_CLASSES = 21
 
 
 def train_step(data, net, criterion, optimizer):
+    """ train_step function
+
+    Args:
+        data: data of one batch
+            img: input images (B, 3, 300, 300)
+            gt_confs: classification targets (B, num_anchor)
+            gt_locs: regression targets (B, num_anchor, 4)
+        net: SSD network
+        criterion: loss computing object
+        optimizer: training optimizer
+
+    Returns:
+        loss: total loss
+        conf_loss: classification loss
+        loc_loss: regression loss
+    """
     net.train()
     img, gt_confs, gt_locs = data
     img = img.to(device)
