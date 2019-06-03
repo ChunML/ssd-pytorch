@@ -66,14 +66,20 @@ def train_step(data, net, criterion, optimizer):
 
 
 if __name__ == '__main__':
-    default_boxes = generate_default_boxes()
+    config = {
+        'scales': [0.1, 0.2, 0.37, 0.54, 0.71, 0.88, 1.05],
+        'fm_sizes': [38, 19, 10, 5, 3, 1],
+        'ratios': [(2,), (2, 3), (2, 3), (2, 3), (2,), (2,)]
+    }
 
-    dataloader = create_dataloader()
+    default_boxes = generate_default_boxes(config)
 
-    ssd = create_ssd()
+    dataloader, info = create_dataloader(args.data_dir, args.batch_size, default_boxes, args.num_examples)
+
+    ssd = create_ssd(NUM_CLASSES, 'base', args.pretrained_path)
     ssd.to(device)
 
-    criterion = create_loss()
+    criterion = create_loss(args.neg_ratio, NUM_CLASSES)
 
     optimizer = optim.SGD(ssd.parameters(), lr=args.lr,
                           momentum=args.momentum, weight_decay=args.weight_decay)
