@@ -4,8 +4,7 @@ import os
 import cv2
 import numpy as np
 import xml.etree.ElementTree as ET
-from box_utils import compute_target
-from anchor import generate_default_boxes
+from image_utils import visualize_and_save_image
 
 
 class VOCDataset(Dataset):
@@ -82,4 +81,16 @@ if __name__ == '__main__':
     voc = VOCDataset('./data/VOCdevkit', '2007')
     data = voc[0]
 
+    idx_to_name = voc.idx_to_name
+
     print([x.shape for x in data])
+
+    img, boxes, labels = data
+    img = img.permute(1, 2, 0).contiguous().numpy()
+    img += [123, 117, 104]
+    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+    boxes = boxes.numpy() * 300
+    labels = labels.numpy()
+
+    save_path = './test.jpg'
+    visualize_and_save_image(img, boxes, labels, idx_to_name, save_path)
