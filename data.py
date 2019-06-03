@@ -4,6 +4,7 @@ import os
 import cv2
 import numpy as np
 import xml.etree.ElementTree as ET
+from box_utils import compute_target
 from image_utils import ImageVisualizer
 
 
@@ -16,7 +17,7 @@ class VOCDataset(Dataset):
         num_examples: number of examples to be used
                       (in case one wants to overfit small data)
     """
-    def __init__(self, root_dir, year, num_examples=-1):
+    def __init__(self, root_dir, year, default_boxes, num_examples=-1):
         super(VOCDataset, self).__init__()
         self.idx_to_name = [
             'aeroplane', 'bicycle', 'bird', 'boat',
@@ -31,6 +32,8 @@ class VOCDataset(Dataset):
         self.image_dir = os.path.join(self.data_dir, 'JPEGImages')
         self.anno_dir = os.path.join(self.data_dir, 'Annotations')
         self.ids = list(map(lambda x: x[:-4], os.listdir(self.image_dir)))
+
+        self.default_boxes = default_boxes
 
         if num_examples != -1:
             self.ids = self.ids[:num_examples]
@@ -109,10 +112,12 @@ class VOCDataset(Dataset):
         boxes = torch.from_numpy(boxes)
         labels = torch.from_numpy(labels)
 
-        return img, boxes, labels
+        gt_confs, gt_locs = compute_target(self.default_boxes, boxes, labels)
+
+        return img, gt_confs, gt_locs
 
 
-def create_dataloader(root_dir, batch_size, num_examples=-1):
+def create_dataloader(root_dir, batch_size, default_boxes, num_examples=-1):
     """ Create a DataLoader object
         to iterate throughout the dataset
 
@@ -124,7 +129,7 @@ def create_dataloader(root_dir, batch_size, num_examples=-1):
     Returns:
         dataloader: an instance of DataLoader
     """
-    dataset = VOCDataset('./data/VOCdevkit', '2007', num_examples)
+    dataset = VOCDataset('./data/VOCdevkit', '2007', default_boxes, num_examples)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
     info = {
@@ -137,7 +142,8 @@ def create_dataloader(root_dir, batch_size, num_examples=-1):
 
 
 if __name__ == '__main__':
-    dataloader, info = create_dataloader('./data/VOCdevkit', 1)
+    default_boxes = torch.rand(8732, 4)
+    dataloader, info = create_dataloader('./data/VOCdevkit', 1, default_boxes)
     data = next(iter(dataloader))
 
     idx_to_name = info['idx_to_name']
