@@ -4,7 +4,7 @@ import os
 import cv2
 import numpy as np
 import xml.etree.ElementTree as ET
-from image_utils import visualize_and_save_image
+from image_utils import ImageVisualizer
 
 
 class VOCDataset(Dataset):
@@ -92,5 +92,5 @@ if __name__ == '__main__':
     boxes = boxes.numpy() * 300
     labels = labels.numpy()
 
-    save_path = './test.jpg'
-    visualize_and_save_image(img, boxes, labels, idx_to_name, save_path)
+    visualizer = ImageVisualizer(idx_to_name)
+    visualizer.save_image(img, boxes, labels, 'test.jpg')
