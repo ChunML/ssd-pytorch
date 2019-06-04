@@ -83,8 +83,11 @@ if __name__ == '__main__':
 
     optimizer = optim.SGD(ssd.parameters(), lr=args.lr,
                           momentum=args.momentum, weight_decay=args.weight_decay)
+    scheduler = optim.lr_scheduler.MultiStepLR(
+        optimizer, milestones=[int(args.num_epochs*0.6), int(args.num_epochs*0.8)], gamma=0.1, last_epoch=-1)
 
     for epoch in range(args.num_epochs):
+        scheduler.step()
         avg_loss = 0.0
         avg_conf_loss = 0.0
         avg_loc_loss = 0.0
