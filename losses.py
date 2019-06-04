@@ -71,12 +71,12 @@ class SSDLosses(object):
         gt_confs = gt_confs[pos_idx | neg_idx]
         conf_loss = F.cross_entropy(
             confs, gt_confs,
-            size_average=False)
+            reduction='sum')
 
         # regression loss only consist of positive examples
         locs = locs[pos_idx, :].view(-1, 4)
         gt_locs = gt_locs[pos_idx, :].view(-1, 4)
-        loc_loss = F.smooth_l1_loss(locs, gt_locs, size_average=False)
+        loc_loss = F.smooth_l1_loss(locs, gt_locs, reduction='sum')
 
         num_pos = locs.size(0)
 
