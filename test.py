@@ -21,8 +21,10 @@ parser.add_argument('--max_num_boxes_per_class', default=200, type=int)
 parser.add_argument('--score_thresh', default=0.6, type=float)
 parser.add_argument('--nms_thresh', default=0.45, type=int)
 parser.add_argument('--batch_size', default=1, type=int)
+
 args = parser.parse_args()
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def reconstruct_image(img):
     """ Reconstruct processed image to export:
@@ -60,6 +62,8 @@ def test(ssd, data, default_boxes):
         all_names: final class names, numpy array of (num_boxes,)
     """
     img, _, _ = data
+    img = img.to(device)
+    default_boxes = default_boxes.to(device)
     with torch.no_grad():
         out_confs, out_locs = ssd(img)
     out_confs = out_confs.squeeze(0)
@@ -94,9 +98,9 @@ def test(ssd, data, default_boxes):
     all_boxes *= 300
     all_scores = torch.cat(all_scores, dim=0)
 
-    img = img.squeeze(0).numpy()
-    all_boxes = all_boxes.numpy()
-    all_scores = all_scores.numpy()
+    img = img.squeeze(0).cpu().numpy()
+    all_boxes = all_boxes.cpu().numpy()
+    all_scores = all_scores.cpu().numpy()
     all_names = np.array(all_names)
 
     return img, all_boxes, all_scores, all_names
@@ -116,6 +120,7 @@ if __name__ == '__main__':
         default_boxes, args.num_examples)
 
     ssd = create_ssd(NUM_CLASSES, 'ssd', args.pretrained_path)
+    ssd.to(device)
     ssd.eval()
 
     visualizer = ImageVisualizer(
