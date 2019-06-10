@@ -8,17 +8,30 @@ class SSD(nn.Module):
 
     Attributes:
         num_classes: number of classes
+        arch: network architecture, either ssd300 or ssd512
     """
 
-    def __init__(self, num_classes):
+    def __init__(self, num_classes, arch='ssd300'):
         super(SSD, self).__init__()
         self.num_classes = num_classes
-        self.vgg16_layers = nn.ModuleList(create_vgg16_layers())
+        vgg16_layers = create_vgg16_layers()
+        extra_layers = create_extra_layers()
+        conf_head_layers = create_conf_head_layers(num_classes)
+        loc_head_layers = create_loc_head_layers()
+
+        if arch == 'ssd300':
+            # Delete the 12th block
+            # if the architecture is SSD300
+            extra_layers.pop(-1)
+            conf_head_layers.pop(-2)
+            loc_head_layers.pop(-2)
+
+        self.vgg16_layers = nn.ModuleList(vgg16_layers)
         self.batch_norm = nn.BatchNorm2d(512)
-        self.extra_layers = nn.ModuleList(create_extra_layers())
+        self.extra_layers = nn.ModuleList(extra_layers)
         self.conf_head_layers = nn.ModuleList(
-            create_conf_head_layers(num_classes))
-        self.loc_head_layers = nn.ModuleList(create_loc_head_layers())
+            conf_head_layers)
+        self.loc_head_layers = nn.ModuleList(loc_head_layers)
 
     def compute_heads(self, x, idx):
         """ Compute outputs of classification and regression heads
@@ -111,18 +124,19 @@ def _xavier_init(m):
         nn.init.xavier_uniform_(m.weight)
 
 
-def create_ssd(num_classes, pretrained_type=None, weight_path=None):
+def create_ssd(num_classes, arch, pretrained_type=None, weight_path=None):
     """ Create SSD model and load pretrained weights
 
     Args:
         num_classes: number of classes
+        arch: network architecture, either ssd300 or ssd512
         pretrained_type: type of pretrained weights, can be either 'VGG16' or 'ssd'
         weight_path: path to pretrained weights
 
     Returns:
         net: the SSD model
     """
-    net = SSD(num_classes)
+    net = SSD(num_classes, arch)
 
     if pretrained_type is None:
         net.init_from_scratch()
@@ -145,7 +159,7 @@ def create_ssd(num_classes, pretrained_type=None, weight_path=None):
 
 if __name__ == '__main__':
     NUM_CLASSES = 21
-    ssd = create_ssd(NUM_CLASSES, 'base',
+    ssd = create_ssd(NUM_CLASSES, 'ssd300', 'base',
                      '../new-ssd/weights/vgg16_reducedfc.pth')
 
     x = torch.randn(1, 3, 300, 300)

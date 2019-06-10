@@ -17,7 +17,9 @@ class VOCDataset(Dataset):
         num_examples: number of examples to be used
                       (in case one wants to overfit small data)
     """
-    def __init__(self, root_dir, year, default_boxes, num_examples=-1):
+    def __init__(self, root_dir, year,
+                 new_size, default_boxes,
+                 num_examples=-1):
         super(VOCDataset, self).__init__()
         self.idx_to_name = [
             'aeroplane', 'bicycle', 'bird', 'boat',
@@ -33,6 +35,7 @@ class VOCDataset(Dataset):
         self.anno_dir = os.path.join(self.data_dir, 'Annotations')
         self.ids = list(map(lambda x: x[:-4], os.listdir(self.image_dir)))
 
+        self.new_size = new_size
         self.default_boxes = default_boxes
 
         if num_examples != -1:
@@ -58,7 +61,9 @@ class VOCDataset(Dataset):
         img = cv2.imread(img_path)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB).astype(np.float32)
         orig_shape = img.shape
-        img = cv2.resize(img, (300, 300))
+
+        img = cv2.resize(
+            img, (self.new_size, self.new_size))
         img -= [123, 117, 104]
         return torch.from_numpy(img).permute(2, 0, 1), orig_shape
 
@@ -117,7 +122,9 @@ class VOCDataset(Dataset):
         return img, gt_confs, gt_locs
 
 
-def create_dataloader(root_dir, batch_size, default_boxes, num_examples=-1):
+def create_dataloader(root_dir, batch_size,
+                      image_size, default_boxes,
+                      num_examples=-1):
     """ Create a DataLoader object
         to iterate throughout the dataset
 
@@ -129,8 +136,12 @@ def create_dataloader(root_dir, batch_size, default_boxes, num_examples=-1):
     Returns:
         dataloader: an instance of DataLoader
     """
-    dataset = VOCDataset('./data/VOCdevkit', '2007', default_boxes, num_examples)
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    dataset = VOCDataset('./data/VOCdevkit', '2007',
+                         image_size, default_boxes,
+                         num_examples)
+    dataloader = DataLoader(dataset,
+                            batch_size=batch_size,
+                            shuffle=True)
 
     info = {
         'idx_to_name': dataset.idx_to_name,

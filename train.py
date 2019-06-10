@@ -6,6 +6,9 @@ from data import create_dataloader
 from network import create_ssd
 from losses import create_loss
 from anchor import generate_default_boxes
+import yaml
+import time
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data_dir', default='./data/VOCdevkit')
@@ -15,7 +18,7 @@ parser.add_argument('--lr', default=1e-3, type=float)
 parser.add_argument('--momentum', default=0.9, type=float)
 parser.add_argument('--weight_decay', default=5e-4, type=float)
 parser.add_argument('--gamma', default=0.1, type=float)
-
+parser.add_argument('--arch', default='ssd300')
 parser.add_argument('--num_examples', default=-1, type=int)
 parser.add_argument('--batch_size', default=32, type=int)
 parser.add_argument('--num_epochs', default=120, type=int)
@@ -66,17 +69,23 @@ def train_step(data, net, criterion, optimizer):
 
 
 if __name__ == '__main__':
-    config = {
-        'scales': [0.1, 0.2, 0.37, 0.54, 0.71, 0.88, 1.05],
-        'fm_sizes': [38, 19, 10, 5, 3, 1],
-        'ratios': [(2,), (2, 3), (2, 3), (2, 3), (2,), (2,)]
-    }
+    with open('config.yaml', 'r') as f:
+        cfg = yaml.load(f)
+
+    if args.arch == 'ssd300':
+        config = cfg['SSD300']
+    else:
+        config = cfg['SSD512']
 
     default_boxes = generate_default_boxes(config)
 
-    dataloader, info = create_dataloader(args.data_dir, args.batch_size, default_boxes, args.num_examples)
+    dataloader, info = create_dataloader(
+        args.data_dir, args.batch_size,
+        config['image_size'], default_boxes,
+        args.num_examples)
 
-    ssd = create_ssd(NUM_CLASSES, 'base', args.pretrained_path)
+    ssd = create_ssd(NUM_CLASSES, args.arch,
+                     'base', args.pretrained_path)
     ssd.to(device)
 
     criterion = create_loss(args.neg_ratio, NUM_CLASSES)
@@ -91,6 +100,7 @@ if __name__ == '__main__':
         avg_loss = 0.0
         avg_conf_loss = 0.0
         avg_loc_loss = 0.0
+        start_time = time.time()
         for i, data in enumerate(dataloader):
             loss, conf_loss, loc_loss = train_step(
                 data, ssd, criterion, optimizer)
@@ -103,8 +113,9 @@ if __name__ == '__main__':
             avg_loc_loss = (avg_loc_loss * i + loc_loss) / (i + 1)
 
             if i % 10 == 0:
-                print('Epoch {} Batch {} Loss {:.4f} Conf Loss {:.4f} Loc Loss {:.4f}'.format(
-                    epoch + 1, i + 1, avg_loss, avg_conf_loss, avg_loc_loss))
+                batch_time = time.time() - start_time
+                print('Epoch {} Batch {} Avg Time {:.2f}s | Loss {:.4f} Conf Loss {:.4f} Loc Loss {:.4f}'.format(
+                    epoch + 1, i + 1, batch_time / (i + 1), avg_loss, avg_conf_loss, avg_loc_loss))
 
         torch.save(
             ssd.state_dict(),

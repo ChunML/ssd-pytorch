@@ -8,12 +8,15 @@ from network import create_ssd
 from anchor import generate_default_boxes
 from box_utils import decode, compute_nms
 import cv2
+import yaml
+
 
 NUM_CLASSES = 21
 MEAN = [123, 117, 104]
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data_dir', default='./data/VOCdevkit')
+parser.add_argument('--arch', default='ssd300')
 parser.add_argument('--save_image_dir', default='./images')
 parser.add_argument('--pretrained_path', default='./models/ssd_epoch_23.pth')
 parser.add_argument('--num_examples', default=40, type=int)
@@ -95,10 +98,10 @@ def test(ssd, data, default_boxes):
         all_names.extend(cls_names)
 
     all_boxes = torch.cat(all_boxes, dim=0)
-    all_boxes *= 300
     all_scores = torch.cat(all_scores, dim=0)
 
     img = img.squeeze(0).cpu().numpy()
+    all_boxes *= img.shape[-1]
     all_boxes = all_boxes.cpu().numpy()
     all_scores = all_scores.cpu().numpy()
     all_names = np.array(all_names)
@@ -107,19 +110,23 @@ def test(ssd, data, default_boxes):
 
 
 if __name__ == '__main__':
-    config = {
-        'scales': [0.1, 0.2, 0.37, 0.54, 0.71, 0.88, 1.05],
-        'fm_sizes': [38, 19, 10, 5, 3, 1],
-        'ratios': [(2,), (2, 3), (2, 3), (2, 3), (2,), (2,)]
-    }
+    with open('config.yaml', 'r') as f:
+        cfg = yaml.load(f)
+
+    if args.arch == 'ssd300':
+        config = cfg['SSD300']
+    else:
+        config = cfg['SSD512']
 
     default_boxes = generate_default_boxes(config)
 
     dataloader, info = create_dataloader(
         args.data_dir, args.batch_size,
+        config['image_size'],
         default_boxes, args.num_examples)
 
-    ssd = create_ssd(NUM_CLASSES, 'ssd', args.pretrained_path)
+    ssd = create_ssd(NUM_CLASSES, args.arch,
+                     'ssd', args.pretrained_path)
     ssd.to(device)
     ssd.eval()
 
