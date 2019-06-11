@@ -123,7 +123,7 @@ if __name__ == '__main__':
     dataloader, info = create_dataloader(
         args.data_dir, args.batch_size,
         config['image_size'],
-        default_boxes, args.num_examples)
+        default_boxes, False, args.num_examples)
 
     ssd = create_ssd(NUM_CLASSES, args.arch,
                      'ssd', args.pretrained_path)

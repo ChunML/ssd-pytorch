@@ -12,6 +12,7 @@ import time
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data_dir', default='./data/VOCdevkit')
+parser.add_argument('--augmentation', default=True, type=bool)
 parser.add_argument('--pretrained_path', default='./weights/vgg16_reducedfc.pth')
 parser.add_argument('--neg_ratio', default=3, type=int)
 parser.add_argument('--lr', default=1e-3, type=float)
@@ -21,7 +22,7 @@ parser.add_argument('--gamma', default=0.1, type=float)
 parser.add_argument('--arch', default='ssd300')
 parser.add_argument('--num_examples', default=-1, type=int)
 parser.add_argument('--batch_size', default=32, type=int)
-parser.add_argument('--num_epochs', default=120, type=int)
+parser.add_argument('--num_epochs', default=240, type=int)
 parser.add_argument('--checkpoint_dir', default='./models')
 
 args = parser.parse_args()
@@ -82,6 +83,7 @@ if __name__ == '__main__':
     dataloader, info = create_dataloader(
         args.data_dir, args.batch_size,
         config['image_size'], default_boxes,
+        args.augmentation,
         args.num_examples)
 
     ssd = create_ssd(NUM_CLASSES, args.arch,
@@ -93,7 +95,7 @@ if __name__ == '__main__':
     optimizer = optim.SGD(ssd.parameters(), lr=args.lr,
                           momentum=args.momentum, weight_decay=args.weight_decay)
     scheduler = optim.lr_scheduler.MultiStepLR(
-        optimizer, milestones=[int(args.num_epochs*0.6), int(args.num_epochs*0.8)], gamma=0.1, last_epoch=-1)
+        optimizer, milestones=[int(args.num_epochs*0.65), int(args.num_epochs*0.8)], gamma=0.1, last_epoch=-1)
 
     for epoch in range(args.num_epochs):
         scheduler.step()
@@ -112,11 +114,13 @@ if __name__ == '__main__':
             avg_conf_loss = (avg_conf_loss * i + conf_loss) / (i + 1)
             avg_loc_loss = (avg_loc_loss * i + loc_loss) / (i + 1)
 
-            if i % 10 == 0:
+            if (i + 1) % 10 == 0:
                 batch_time = time.time() - start_time
                 print('Epoch {} Batch {} Avg Time {:.2f}s | Loss {:.4f} Conf Loss {:.4f} Loc Loss {:.4f}'.format(
                     epoch + 1, i + 1, batch_time / (i + 1), avg_loss, avg_conf_loss, avg_loc_loss))
 
-        torch.save(
-            ssd.state_dict(),
-            os.path.join(args.checkpoint_dir, 'ssd_epoch_{}.pth'.format(epoch)))
+        if (epoch + 1) % 10 == 0:
+            torch.save(
+                ssd.state_dict(),
+                os.path.join(args.checkpoint_dir,
+                             'ssd_epoch_{}.pth'.format(epoch + 1)))
