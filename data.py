@@ -19,6 +19,7 @@ class VOCDataset(Dataset):
     """
     def __init__(self, root_dir, year,
                  new_size, default_boxes,
+                 augmentation,
                  num_examples=-1):
         super(VOCDataset, self).__init__()
         self.idx_to_name = [
@@ -37,6 +38,7 @@ class VOCDataset(Dataset):
 
         self.new_size = new_size
         self.default_boxes = default_boxes
+        self.augmentation = augmentation
 
         if num_examples != -1:
             self.ids = self.ids[:num_examples]
@@ -100,6 +102,28 @@ class VOCDataset(Dataset):
 
         return np.array(boxes, dtype=np.float32), np.array(labels, dtype=np.int64)
 
+    def _random_flip(self, img, boxes):
+        if np.random.rand() > 0.5:
+            return self._random_horizontal_flip(img, boxes)
+        else:
+            return self._random_vertical_flip(img, boxes)
+
+    def _random_vertical_flip(self, img, boxes):
+        img = torch.flip(img, [1])
+        xmin = boxes[:, 1].clone()
+        boxes[:, 1] = 1 - boxes[:, 3]
+        boxes[:, 3] = 1 - xmin
+
+        return img, boxes
+
+    def _random_horizontal_flip(self, img, boxes):
+        img = torch.flip(img, [2])
+        xmin = boxes[:, 0].clone()
+        boxes[:, 0] = 1 - boxes[:, 2]
+        boxes[:, 2] = 1 - xmin
+
+        return img, boxes
+
     def __getitem__(self, index):
         """ The __getitem__ method
             so that the object can be iterable
@@ -117,6 +141,10 @@ class VOCDataset(Dataset):
         boxes = torch.from_numpy(boxes)
         labels = torch.from_numpy(labels)
 
+        if self.augmentation:
+            if np.random.rand() > 0.5:
+                img, boxes = self._random_flip(img, boxes)
+
         gt_confs, gt_locs = compute_target(self.default_boxes, boxes, labels)
 
         return img, gt_confs, gt_locs
@@ -124,6 +152,7 @@ class VOCDataset(Dataset):
 
 def create_dataloader(root_dir, batch_size,
                       image_size, default_boxes,
+                      augmentation=False,
                       num_examples=-1):
     """ Create a DataLoader object
         to iterate throughout the dataset
@@ -138,7 +167,7 @@ def create_dataloader(root_dir, batch_size,
     """
     dataset = VOCDataset('./data/VOCdevkit', '2007',
                          image_size, default_boxes,
-                         num_examples)
+                         augmentation, num_examples)
     dataloader = DataLoader(dataset,
                             batch_size=batch_size,
                             shuffle=True)
