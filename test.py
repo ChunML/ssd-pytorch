@@ -15,15 +15,24 @@ NUM_CLASSES = 21
 MEAN = [123, 117, 104]
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--data_dir', default='./data/VOCdevkit')
-parser.add_argument('--arch', default='ssd300')
-parser.add_argument('--save_image_dir', default='./images')
-parser.add_argument('--pretrained_path', default='./models/ssd_epoch_23.pth')
-parser.add_argument('--num_examples', default=40, type=int)
-parser.add_argument('--max_num_boxes_per_class', default=200, type=int)
-parser.add_argument('--score_thresh', default=0.6, type=float)
-parser.add_argument('--nms_thresh', default=0.45, type=int)
-parser.add_argument('--batch_size', default=1, type=int)
+parser.add_argument('--data_dir', default='./data/VOCdevkit',
+                    help='data root directory')
+parser.add_argument('--arch', default='ssd300',
+                    help='SSD architecture, can be either ssd300 or ssd512')
+parser.add_argument('--save_image_dir', default='./images',
+                    help='directory to save result images')
+parser.add_argument('--pretrained_path', default='./models/ssd_epoch_23.pth',
+                    help='pretrained weight path')
+parser.add_argument('--num_examples', default=40, type=int,
+                    help='number of examples to test')
+parser.add_argument('--max_num_boxes_per_class', default=200, type=int,
+                    help='maximum number of objects per class (used in NMS logic)')
+parser.add_argument('--score_thresh', default=0.6, type=float,
+                    help='score threshold')
+parser.add_argument('--nms_thresh', default=0.45, type=int,
+                    help='NMS threshold')
+parser.add_argument('--batch_size', default=1, type=int,
+                    help='batch size')
 
 args = parser.parse_args()
 

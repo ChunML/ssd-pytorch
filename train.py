@@ -11,19 +11,32 @@ import time
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--data_dir', default='./data/VOCdevkit')
-parser.add_argument('--augmentation', default=True, type=bool)
-parser.add_argument('--pretrained_path', default='./weights/vgg16_reducedfc.pth')
-parser.add_argument('--neg_ratio', default=3, type=int)
-parser.add_argument('--lr', default=1e-3, type=float)
-parser.add_argument('--momentum', default=0.9, type=float)
-parser.add_argument('--weight_decay', default=5e-4, type=float)
-parser.add_argument('--gamma', default=0.1, type=float)
-parser.add_argument('--arch', default='ssd300')
-parser.add_argument('--num_examples', default=-1, type=int)
-parser.add_argument('--batch_size', default=32, type=int)
-parser.add_argument('--num_epochs', default=240, type=int)
-parser.add_argument('--checkpoint_dir', default='./models')
+parser.add_argument('--data_dir', default='./data/VOCdevkit',
+                    help='data root directory')
+parser.add_argument('--augmentation', default=True, type=bool,
+                    help='whether to perform augmentation of data')
+parser.add_argument('--pretrained_path', default='./weights/vgg16_reducedfc.pth',
+                    help='pretrained weight path')
+parser.add_argument('--neg_ratio', default=3, type=int,
+                    help='negative examples ratio (used in hard negative mining logic)')
+parser.add_argument('--lr', default=1e-3, type=float,
+                    help='initial learning rate')
+parser.add_argument('--momentum', default=0.9, type=float,
+                    help='momentum (used in SGD)')
+parser.add_argument('--weight_decay', default=5e-4, type=float,
+                    help='weight decay (used in SGD)')
+parser.add_argument('--gamma', default=0.1, type=float,
+                    help='gamma (used in SGD)')
+parser.add_argument('--arch', default='ssd300',
+                    help='SSD architecture, can be either ssd300 or ssd512')
+parser.add_argument('--num_examples', default=-1, type=int,
+                    help='number of examples to train')
+parser.add_argument('--batch_size', default=32, type=int,
+                    help='batch size')
+parser.add_argument('--num_epochs', default=240, type=int,
+                    help='number of epochs to train')
+parser.add_argument('--checkpoint_dir', default='./models',
+                    help='directory to store training weights')
 
 args = parser.parse_args()
 
